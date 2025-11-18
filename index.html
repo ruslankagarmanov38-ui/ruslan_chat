@@ -1,165 +1,268 @@
-<!doctype html>
-<html lang="ru" data-theme="dark">
+<!DOCTYPE html>
+<html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Рандомайзер</title>
+<meta charset="UTF-8">
+<title>Ruslan Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-:root {
-  --bg:#0b1220; --card:#071022; --accent:#00e6a8; --text:#e6f0f4; --muted:#7b8b99;
-  --input-bg:rgba(255,255,255,0.08); --input-border:rgba(255,255,255,0.2);
+:root{
+  --accent:#6a4cff;
+  --bg:#0b0b0f;
+  --block:#15151b;
+  --text:#eee;
 }
-[data-theme="light"] {
-  --bg:#f4f7fa; --card:#ffffff; --accent:#00796b; --text:#0b1220; --muted:#5b6b75;
-  --input-bg:#ffffff; --input-border:#c9d3dd;
+
+body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial, sans-serif;
 }
-body {margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;
-display:flex;justify-content:center;align-items:center;height:100vh;transition:.3s;}
-.frame {background:var(--card);width:100%;max-width:420px;padding:28px;border-radius:14px;
-box-shadow:0 0 40px rgba(0,0,0,.45);text-align:center;}
-.hidden {display:none;}
-.theme-btn {position:absolute;top:20px;right:20px;padding:8px 14px;border-radius:10px;
-border:1px solid var(--accent);background:none;color:var(--text);cursor:pointer;font-weight:600;}
-.online-top {font-size:14px;margin-bottom:14px;color:var(--muted);}
-.label {text-align:left;font-size:14px;margin-top:12px;margin-bottom:6px;color:var(--muted);}
-.input {width:100%;padding:12px;border-radius:10px;border:1px solid var(--input-border);
-background:var(--input-bg);color:var(--text);font-size:16px;}
-.btn {margin-top:18px;padding:14px;width:100%;border:none;border-radius:12px;
-background:var(--accent);color:#022;font-weight:700;cursor:pointer;
-box-shadow:0 0 24px rgba(0,255,180,0.3);}
-.btn-outline {margin-top:14px;padding:12px;width:100%;border-radius:12px;border:1px solid var(--accent);
-background:none;color:var(--text);cursor:pointer;}
-.spinner {width:70px;height:70px;border-radius:50%;border:6px solid rgba(255,255,255,0.15);
-border-top:6px solid var(--accent);animation:spin 1s linear infinite;margin:20px auto;}
-@keyframes spin {to {transform:rotate(360deg);}}
-.messages {width:100%;height:160px;padding:10px;border-radius:10px;border:1px solid var(--input-border);
-background:var(--input-bg);color:var(--text);}
-.typing {font-size:14px;color:var(--muted);margin-top:5px;}
+
+.container{
+  width:100%;
+  max-width:450px;
+  margin:40px auto;
+  text-align:center;
+}
+
+/* LOGO */
+.logo{
+  font-size:36px;
+  font-weight:900;
+  color:var(--accent);
+  margin-bottom:20px;
+  text-shadow:0 0 25px var(--accent);
+  animation:fadeIn 1s ease;
+}
+
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(-10px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+select,input{
+  width:100%;
+  padding:14px;
+  font-size:16px;
+  margin-top:12px;
+  border:none;
+  border-radius:10px;
+  background:var(--block);
+  color:white;
+  outline:none;
+  transition:0.3s;
+  box-shadow:0 0 0 rgba(0,0,0,0);
+}
+
+select:focus,input:focus{
+  box-shadow:0 0 12px var(--accent);
+}
+
+/* BUTTONS */
+.btn{
+  width:100%;
+  padding:14px;
+  margin-top:15px;
+  background:var(--accent);
+  border:none;
+  border-radius:50px;
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+  font-weight:bold;
+  transition:0.25s;
+  box-shadow:0 0 15px rgba(106,76,255,0.6);
+}
+
+.btn:hover{
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
+
+/* CHAT AREA */
+#chat{
+  display:none;
+  animation:fadeIn 0.6s;
+}
+
+#messages{
+  height:340px;
+  overflow-y:auto;
+  border-radius:10px;
+  padding:10px;
+  margin-bottom:10px;
+  background:var(--block);
+  box-shadow:0 0 15px rgba(0,0,0,0.4);
+}
+
+.message{
+  background:#1f1f27;
+  margin:8px 0;
+  padding:12px;
+  border-radius:10px;
+  text-align:left;
+  font-size:15px;
+  animation:fadeInMsg 0.3s;
+}
+
+@keyframes fadeInMsg{
+  from{opacity:0; transform:translateY(5px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+/* ROULETTE */
+.loader{
+  margin-top:20px;
+  display:none;
+}
+
+.spinner{
+  width:60px;
+  height:60px;
+  border:6px solid #333;
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:0 auto;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+/* ONLINE COUNTER */
+.online{
+  margin-top:10px;
+  font-size:15px;
+  opacity:0.8;
+}
+
 </style>
 </head>
+
 <body>
 
-<button id="themeToggle" class="theme-btn">🌙/☀️</button>
+<div class="container">
 
-<div class="frame">
+  <div class="logo">RUSLAN CHAT 💬</div>
 
-  <div class="online-top">В сети: <span id="online">0</span></div>
+  <div class="online" id="onlineCount">В сети: 0</div>
 
   <div id="menu">
-    <h2 style="color:var(--accent);">Найти собеседника</h2>
-    <label class="label">Ваш пол</label>
-    <select id="myGender" class="input">
-      <option value="m">Мужчина</option>
-      <option value="w">Женщина</option>
-      <option value="o">Другое</option>
-      <option value="n">Не указывать</option>
-    </select>
 
-    <label class="label">Кого ищем</label>
-    <select id="searchGender" class="input">
-      <option value="a">Любой</option>
-      <option value="m">Мужчина</option>
-      <option value="w">Женщина</option>
-    </select>
+      <select id="myGender">
+        <option value="m">Я — мужчина</option>
+        <option value="f">Я — женщина</option>
+      </select>
 
-    <button id="find" class="btn">Найти собеседника</button>
+      <select id="seekGender">
+        <option value="a">Ищу — любой</option>
+        <option value="m">Ищу — мужчину</option>
+        <option value="f">Ищу — женщину</option>
+      </select>
+
+      <button class="btn" onclick="startSearch()">Найти собеседника</button>
+
+      <div class="loader" id="loader">
+         <div class="spinner"></div>
+         <div style="margin-top:10px;">Поиск...</div>
+      </div>
+
   </div>
 
-  <div id="search" class="hidden">
-    <div class="spinner"></div>
-    <p>Поиск...</p>
-    <button id="cancel" class="btn-outline">Прекратить поиск</button>
+  <div id="chat">
+      <div id="messages"></div>
+      <input id="msgInput" placeholder="Введите сообщение...">
+      <button class="btn" onclick="sendMsg()">Отправить</button>
+      <button class="btn" onclick="endChat()">Отключиться</button>
   </div>
 
-  <div id="chat" class="hidden">
-    <h2 style="color:var(--accent);">Собеседник найден</h2>
-    <textarea readonly id="messages" class="messages"></textarea>
-    <div id="typing" class="typing hidden">Собеседник пишет...</div>
-    <input id="msg" class="input" placeholder="Введите сообщение...">
-    <button id="send" class="btn">Отправить</button>
-    <button id="disconnect" class="btn-outline">Отключиться</button>
-  </div>
 </div>
 
-<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-const $ = id => document.getElementById(id);
-
-if(localStorage.theme){
-  document.documentElement.setAttribute("data-theme", localStorage.theme);
-}
-$("themeToggle").onclick = () => {
-  let now = document.documentElement.getAttribute("data-theme");
-  let next = now === "light" ? "dark" : "light";
-  document.documentElement.setAttribute("data-theme", next);
-  localStorage.theme = next;
-};
-
-function show(page){
-  ["menu","search","chat"].forEach(p => $(p).classList.add("hidden"));
-  page.classList.remove("hidden");
-}
-
 const socket = io();
-let sessionId = crypto.randomUUID();
 let roomId = null;
 
-$("find").onclick = () => {
-  show($("search"));
+const menu = document.getElementById("menu");
+const chat = document.getElementById("chat");
+const messagesEl = document.getElementById("messages");
+const msgInput = document.getElementById("msgInput");
+const loader = document.getElementById("loader");
+const onlineCount = document.getElementById("onlineCount");
+
+socket.on("online_count", n=>{
+  onlineCount.innerText = "В сети: " + n;
+});
+
+function startSearch(){
+  loader.style.display="block";
+
+  const myGender = document.getElementById("myGender").value;
+  const seekGender = document.getElementById("seekGender").value;
+
   socket.emit("join_queue", {
-    sessionId,
-    myGender: $("myGender").value,
-    seekingGender: $("searchGender").value
+    myGender,
+    seekingGender: seekGender
   });
-};
 
-$("cancel").onclick = () => {
-  socket.emit("leave_queue");
-  show($("menu"));
-};
+  menu.style.display="none";
+}
 
-socket.on("matched", d => {
-  roomId = d.roomId;
-  $("messages").value = "";
-  show($("chat"));
+socket.on("matched", data => {
+  roomId = data.roomId;
+  loader.style.display="none";
+  chat.style.display="block";
 });
 
-$("send").onclick = () => {
-  let t = $("msg").value.trim();
-  if(!t) return;
-  socket.emit("message",{roomId,text:t});
-  $("messages").value += "Вы: " + t + "\n";
-  $("msg").value = "";
-};
+function sendMsg(){
+  if(!msgInput.value.trim()) return;
+  socket.emit("message", { roomId, text: msgInput.value });
+  addMsg("Вы: " + msgInput.value);
+  msgInput.value="";
+}
 
-$("msg").onkeydown = e => {
-  if(e.key === "Enter") $("send").onclick();
-  socket.emit("typing",{roomId});
-};
-
-socket.on("message",({text,from})=>{
-  $("messages").value += (from===sessionId ? "Вы: " : "Собеседник: ") + text + "\n";
+socket.on("message", data => {
+  addMsg("Собеседник: " + data.text);
 });
 
-socket.on("partner_typing",()=>{
-  $("typing").classList.remove("hidden");
-  clearTimeout(window._typing);
-  window._typing = setTimeout(()=>$("typing").classList.add("hidden"),1200);
+function addMsg(t){
+  const div = document.createElement("div");
+  div.className="message";
+  div.innerText=t;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function endChat(){
+  if(roomId) socket.emit("end", { roomId });
+  roomId=null;
+  chat.style.display="none";
+  menu.style.display="block";
+}
+
+socket.on("ended", ()=>{
+  alert("Собеседник отключился");
+  roomId=null;
+  chat.style.display="none";
+  menu.style.display="block";
 });
 
-$("disconnect").onclick = () => {
-  socket.emit("end",{roomId});
-  roomId = null;
-  show($("menu"));
+socket.on("force_end_from_disconnect", ()=>{
+  if(roomId){
+    alert("Собеседник вышел");
+    roomId=null;
+    chat.style.display="none";
+    menu.style.display="block";
+  }
+});
+
+window.onbeforeunload = () => {
+  if(roomId) socket.emit("end", { roomId });
 };
-
-socket.on("ended",()=>{
-  alert("Собеседник вышел");
-  show($("menu"));
-});
-
-socket.on("online_count",n=>$("online").textContent=n);
 </script>
-
 </body>
 </html>
