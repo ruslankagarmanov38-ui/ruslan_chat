@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Рандомайзер</title>
+<style>
+:root {
+  --bg:#0b1220; --card:#071022; --accent:#00e6a8; --text:#e6f0f4; --muted:#7b8b99;
+  --input-bg:rgba(255,255,255,0.08); --input-border:rgba(255,255,255,0.2);
+}
+[data-theme="light"] {
+  --bg:#f4f7fa; --card:#ffffff; --accent:#00796b; --text:#0b1220; --muted:#5b6b75;
+  --input-bg:#ffffff; --input-border:#c9d3dd;
+}
+body {margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;
+display:flex;justify-content:center;align-items:center;height:100vh;transition:.3s;}
+.frame {background:var(--card);width:100%;max-width:420px;padding:28px;border-radius:14px;
+box-shadow:0 0 40px rgba(0,0,0,.45);text-align:center;}
+.hidden {display:none;}
+.theme-btn {position:absolute;top:20px;right:20px;padding:8px 14px;border-radius:10px;
+border:1px solid var(--accent);background:none;color:var(--text);cursor:pointer;font-weight:600;}
+.online-top {font-size:14px;margin-bottom:14px;color:var(--muted);}
+.label {text-align:left;font-size:14px;margin-top:12px;margin-bottom:6px;color:var(--muted);}
+.input {width:100%;padding:12px;border-radius:10px;border:1px solid var(--input-border);
+background:var(--input-bg);color:var(--text);font-size:16px;}
+.btn {margin-top:18px;padding:14px;width:100%;border:none;border-radius:12px;
+background:var(--accent);color:#022;font-weight:700;cursor:pointer;
+box-shadow:0 0 24px rgba(0,255,180,0.3);}
+.btn-outline {margin-top:14px;padding:12px;width:100%;border-radius:12px;border:1px solid var(--accent);
+background:none;color:var(--text);cursor:pointer;}
+.spinner {width:70px;height:70px;border-radius:50%;border:6px solid rgba(255,255,255,0.15);
+border-top:6px solid var(--accent);animation:spin 1s linear infinite;margin:20px auto;}
+@keyframes spin {to {transform:rotate(360deg);}}
+.messages {width:100%;height:160px;padding:10px;border-radius:10px;border:1px solid var(--input-border);
+background:var(--input-bg);color:var(--text);}
+.typing {font-size:14px;color:var(--muted);margin-top:5px;}
+</style>
+</head>
+<body>
+
+<button id="themeToggle" class="theme-btn">🌙/☀️</button>
+
+<div class="frame">
+
+  <div class="online-top">В сети: <span id="online">0</span></div>
+
+  <div id="menu">
+    <h2 style="color:var(--accent);">Найти собеседника</h2>
+    <label class="label">Ваш пол</label>
+    <select id="myGender" class="input">
+      <option value="m">Мужчина</option>
+      <option value="w">Женщина</option>
+      <option value="o">Другое</option>
+      <option value="n">Не указывать</option>
+    </select>
+
+    <label class="label">Кого ищем</label>
+    <select id="searchGender" class="input">
+      <option value="a">Любой</option>
+      <option value="m">Мужчина</option>
+      <option value="w">Женщина</option>
+    </select>
+
+    <button id="find" class="btn">Найти собеседника</button>
+  </div>
+
+  <div id="search" class="hidden">
+    <div class="spinner"></div>
+    <p>Поиск...</p>
+    <button id="cancel" class="btn-outline">Прекратить поиск</button>
+  </div>
+
+  <div id="chat" class="hidden">
+    <h2 style="color:var(--accent);">Собеседник найден</h2>
+    <textarea readonly id="messages" class="messages"></textarea>
+    <div id="typing" class="typing hidden">Собеседник пишет...</div>
+    <input id="msg" class="input" placeholder="Введите сообщение...">
+    <button id="send" class="btn">Отправить</button>
+    <button id="disconnect" class="btn-outline">Отключиться</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+if(localStorage.theme){
+  document.documentElement.setAttribute("data-theme", localStorage.theme);
+}
+$("themeToggle").onclick = () => {
+  let now = document.documentElement.getAttribute("data-theme");
+  let next = now === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.theme = next;
+};
+
+function show(page){
+  ["menu","search","chat"].forEach(p => $(p).classList.add("hidden"));
+  page.classList.remove("hidden");
+}
+
+const socket = io();
+let sessionId = crypto.randomUUID();
+let roomId = null;
+
+$("find").onclick = () => {
+  show($("search"));
+  socket.emit("join_queue", {
+    sessionId,
+    myGender: $("myGender").value,
+    seekingGender: $("searchGender").value
+  });
+};
+
+$("cancel").onclick = () => {
+  socket.emit("leave_queue");
+  show($("menu"));
+};
+
+socket.on("matched", d => {
+  roomId = d.roomId;
+  $("messages").value = "";
+  show($("chat"));
+});
+
+$("send").onclick = () => {
+  let t = $("msg").value.trim();
+  if(!t) return;
+  socket.emit("message",{roomId,text:t});
+  $("messages").value += "Вы: " + t + "\n";
+  $("msg").value = "";
+};
+
+$("msg").onkeydown = e => {
+  if(e.key === "Enter") $("send").onclick();
+  socket.emit("typing",{roomId});
+};
+
+socket.on("message",({text,from})=>{
+  $("messages").value += (from===sessionId ? "Вы: " : "Собеседник: ") + text + "\n";
+});
+
+socket.on("partner_typing",()=>{
+  $("typing").classList.remove("hidden");
+  clearTimeout(window._typing);
+  window._typing = setTimeout(()=>$("typing").classList.add("hidden"),1200);
+});
+
+$("disconnect").onclick = () => {
+  socket.emit("end",{roomId});
+  roomId = null;
+  show($("menu"));
+};
+
+socket.on("ended",()=>{
+  alert("Собеседник вышел");
+  show($("menu"));
+});
+
+socket.on("online_count",n=>$("online").textContent=n);
+</script>
+
+</body>
+</html>
